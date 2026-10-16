@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>gameso</title>
+</head>
+<body style="margin:0;background:#13113a;color:#f4f2ff;font:700 18px system-ui;display:grid;place-items:center;height:100vh">
+<p>Otwieramy pokój…</p>
+<script>
+// GitHub Pages zwraca 404.html dla każdej nieistniejącej ścieżki, np. /gameso/K7MQ2.
+// Bierzemy kod pokoju i przekierowujemy na stronę główną: /gameso/?r=K7MQ2
+// Jeśli strona stoi w katalogu głównym (user.github.io lub własna domena), ustaw root = true.
+var root = false;
+var p = location.pathname.split('/').filter(Boolean);
+var gh = /\.github\.io$/.test(location.hostname) && !root;
+var base = gh && p.length ? '/' + p[0] + '/' : '/';
+var id = (p[gh ? 1 : 0] || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+location.replace(base + (id ? '?r=' + id : ''));
+</script>
+</body>
+</html>
