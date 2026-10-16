@@ -84,7 +84,7 @@
   function join(c) {
     if (noPeer()) return;
     busy('Wchodzimy do pokoju…');
-    let first = true;
+    let first = true, waited = false;
     G.net.join(c, {
       open() {
         G.net.send({ t: 'hello', pid: me.pid, name: me.name, emoji: me.emoji });
@@ -92,7 +92,8 @@
       },
       data: G.app.onMsg,
       lost() { G.toast('Połączenie zerwane, łączymy ponownie…'); },
-      fail(r) { fail(r === 'nf' ? 'Nie znaleziono pokoju. Sprawdź kod i spróbuj ponownie.' : r === 'host' ? 'Utracono połączenie z hostem. Możliwe, że zamknął kartę.' : 'Nie udało się połączyć. Sprawdź internet.'); }
+      wait() { if (!waited) { waited = true; busy('Szukamy pokoju… Host musi mieć otwartą kartę z grą.'); } },
+      fail(r) { fail(r === 'nf' ? 'Nie znaleziono pokoju. Sprawdź kod i poproś hosta, żeby został na karcie z grą.' : r === 'host' ? 'Utracono połączenie z hostem. Możliwe, że zamknął kartę.' : 'Nie udało się połączyć. Sprawdź internet.'); }
     });
   }
 
@@ -112,11 +113,12 @@
     if (nPl && m.pl.length > nPl) G.sfx('join');
     nPl = m.pl.length;
     const S = m.S, ready = m.pl.filter(p => p.on).length >= 2, dis = isHost ? '' : 'disabled';
-    put(`<section><div class="card share"><div><small>Kod pokoju</small><div class="big-code">${m.code}</div></div><button class="btn mint" data-a="copy">Skopiuj link</button></div>
+    put(`<section><div class="card share"><div><small>Kod pokoju</small><div class="big-code">${m.code}</div></div><div class="acts"><button class="btn mint" data-a="copy">Skopiuj link</button>${navigator.share ? '<button class="btn" data-a="share">Udostępnij</button>' : ''}</div></div>
 <h3>Gracze: ${m.pl.length}</h3><div class="pls">${m.pl.map(p => chip(p)).join('')}</div>
 <h3>${isHost ? 'Wybierz grę' : 'Gra'}</h3><div class="games">${G.GAMES.map(g => `<button class="g ${S.game === g.id ? 'on' : ''}" style="--c:${g.c}" data-a="game" data-g="${g.id}" ${dis}><span class="ge">${g.e}</span><b>${g.n}</b><span>${g.d}</span></button>`).join('')}</div>
 <div class="set">${BY[S.game].map(k => `<div class="opt"><span>${OPT[k][0]}</span><div class="chips">${OPT[k][1].map(v => `<button class="chip ${S[k] === v ? 'on' : ''}" data-a="set" data-k="${k}" data-v='${JSON.stringify(v)}' ${dis}>${OPT[k][2](v)}</button>`).join('')}</div></div>`).join('')}</div>
-${isHost ? `<button class="btn pink big" data-a="start" ${ready ? '' : 'disabled'}>${ready ? 'Zacznij grę' : 'Potrzeba co najmniej 2 graczy'}</button>` : '<p class="mute c" style="margin-top:20px">Czekamy, aż host zacznie grę…</p>'}</section>`);
+${isHost ? `<button class="btn pink big" data-a="start" ${ready ? '' : 'disabled'}>${ready ? 'Zacznij grę' : 'Potrzeba co najmniej 2 graczy'}</button>` : '<p class="mute c" style="margin-top:20px">Czekamy, aż host zacznie grę…</p>'}
+${isHost ? '<p class="mute c" style="margin-top:14px">Nie zamykaj tej karty i nie wygaszaj ekranu, dopóki wszyscy nie dołączą.</p>' : ''}</section>`);
   };
 
   V.task = m => {
@@ -213,6 +215,7 @@ ${m.fin ? (isHost ? '<button class="btn pink big" data-a="lobby">Zagraj jeszcze 
     const u = location.origin + G.base + code;
     (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => G.toast('Link skopiowany'), () => prompt('Skopiuj link:', u));
   };
+  A.share = () => { navigator.share({ title: 'gameso', text: 'Dołącz do mojego pokoju w gameso!', url: location.origin + G.base + code }).catch(() => {}); };
   A.snd = () => { G.snd = !G.snd; localStorage.setItem('gs-snd', G.snd ? '1' : '0'); top(); };
   A.game = b => send({ t: 'set', S: { game: b.dataset.g } });
   A.set = b => send({ t: 'set', S: { [b.dataset.k]: JSON.parse(b.dataset.v) } });
